@@ -18,7 +18,7 @@ type AppRoutesProps = {
 export const AppRoutes = ({ isAuthenticated, setIsAuthenticated }: AppRoutesProps) => (
   <Routes>
     <Route path="/" element={<Layout isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />}>
-      <Route index element={<Home />} />
+      <Route index element={<Home isAuthenticated={isAuthenticated} />} />
       <Route path="about" element={<About />} />
       <Route path="services" element={<Services />} />
       <Route path="contact" element={<Contact />} />

@@ -59,7 +59,7 @@ export const About = () => {
           </div>
           <div className="bg-gray-800 p-1">
             <div className="aspect-square bg-gray-700 overflow-hidden">
-              <img src="/api/placeholder/500/500" alt="Choppers Salon" className="w-full h-full object-cover" />
+              <img src="./about.png" alt="Choppers Salon" className="w-full h-full object-cover" />
             </div>
           </div>
         </div>
