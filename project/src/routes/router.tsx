@@ -10,6 +10,8 @@ import { Register } from "../screens/Auth/Register";
 import { Booking } from "../screens/Booking";
 import { ProtectedRoute } from "../components/ProtectedRoute";
 
+
+
 type AppRoutesProps = {
   isAuthenticated: boolean;
   setIsAuthenticated: React.Dispatch<React.SetStateAction<boolean>>;

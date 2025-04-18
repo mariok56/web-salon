@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Menu, X } from "lucide-react";
 import { Footer } from "../screens/footer/footer";
+import { ScrollToTop } from "./scrollup";
 
 interface LayoutProps {
   isAuthenticated: boolean;
@@ -67,6 +68,9 @@ export const Layout = ({ isAuthenticated, setIsAuthenticated }: LayoutProps) => 
 
   return (
     <div className="relative min-h-screen flex flex-col">
+      <ScrollToTop />
+      
+      {/* Header */}
       <header 
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isScrolled 
