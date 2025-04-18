@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Menu, X } from "lucide-react";
+import { Footer } from "./footer/footer";
 
 interface LayoutProps {
   isAuthenticated: boolean;
@@ -9,6 +10,7 @@ interface LayoutProps {
 
 export const Layout = ({ isAuthenticated }: LayoutProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -30,10 +32,35 @@ export const Layout = ({ isAuthenticated }: LayoutProps) => {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
+  // Handle scroll effect for navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 20) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Close menu when changing route
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
+
   return (
-    <div className="relative min-h-screen">
-      <header className="relative z-50 px-4 md:px-28 py-6 bg-black/50">
-        <div className="flex items-center justify-between">
+    <div className="relative min-h-screen flex flex-col">
+      <header 
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isScrolled 
+            ? "bg-black py-3" 
+            : "bg-black/50 py-6"
+        }`}
+      >
+        <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
           <Link to="/" className="flex items-center">
             <img className="w-[42px] h-7" alt="Logo" src="/logo.svg" />
             <img
@@ -56,8 +83,8 @@ export const Layout = ({ isAuthenticated }: LayoutProps) => {
               <Link
                 key={item.name}
                 to={item.path}
-                className={`font-['Poppins',Helvetica] font-bold text-[15px] leading-[16px] ${
-                  location.pathname === item.path ? "text-[#fbb034]" : "text-white"
+                className={`font-['Poppins',Helvetica] font-bold text-[15px] leading-[16px] transition-colors ${
+                  location.pathname === item.path ? "text-[#fbb034]" : "text-white hover:text-gray-300"
                 }`}
               >
                 {item.name}
@@ -66,7 +93,7 @@ export const Layout = ({ isAuthenticated }: LayoutProps) => {
           </nav>
 
           <div className="hidden md:flex items-center space-x-4">
-            {!isAuthenticated && (
+            {!isAuthenticated ? (
               <>
                 <Button
                   onClick={() => navigate("/login")}
@@ -83,6 +110,18 @@ export const Layout = ({ isAuthenticated }: LayoutProps) => {
                   Register
                 </Button>
               </>
+            ) : (
+              <Button
+                onClick={() => {
+                  // Add logout functionality
+                  // For now just redirect to home
+                  navigate("/");
+                }}
+                variant="outline"
+                className="text-white border-white hover:bg-white/10"
+              >
+                Logout
+              </Button>
             )}
             <Button
               onClick={handleBookNowClick}
@@ -93,9 +132,10 @@ export const Layout = ({ isAuthenticated }: LayoutProps) => {
           </div>
         </div>
 
+        {/* Mobile Menu */}
         {isMenuOpen && (
-          <nav className="absolute top-full left-0 right-0 bg-black/95 p-4 md:hidden">
-            <div className="flex flex-col space-y-4">
+          <div className="absolute top-full left-0 right-0 bg-black/95 p-6 md:hidden">
+            <nav className="flex flex-col space-y-6">
               {navItems.map((item) => (
                 <Link
                   key={item.name}
@@ -105,52 +145,61 @@ export const Layout = ({ isAuthenticated }: LayoutProps) => {
                       ? "text-[#fbb034]"
                       : "text-white"
                   }`}
-                  onClick={() => setIsMenuOpen(false)}
                 >
                   {item.name}
                 </Link>
               ))}
-              {!isAuthenticated && (
-                <>
+              
+              <div className="pt-4 border-t border-gray-800">
+                {!isAuthenticated ? (
+                  <>
+                    <Button
+                      onClick={() => navigate("/login")}
+                      variant="outline"
+                      className="w-full mb-3 text-white border-white hover:bg-white/10"
+                    >
+                      Login
+                    </Button>
+                    <Button
+                      onClick={() => navigate("/register")}
+                      variant="outline"
+                      className="w-full mb-3 text-white border-white hover:bg-white/10"
+                    >
+                      Register
+                    </Button>
+                  </>
+                ) : (
                   <Button
                     onClick={() => {
-                      navigate("/login");
-                      setIsMenuOpen(false);
+                      // Add logout functionality
+                      navigate("/");
                     }}
                     variant="outline"
-                    className="text-white border-white hover:bg-white/10"
+                    className="w-full mb-3 text-white border-white hover:bg-white/10"
                   >
-                    Login
+                    Logout
                   </Button>
-                  <Button
-                    onClick={() => {
-                      navigate("/register");
-                      setIsMenuOpen(false);
-                    }}
-                    variant="outline"
-                    className="text-white border-white hover:bg-white/10"
-                  >
-                    Register
-                  </Button>
-                </>
-              )}
-              <Button
-                onClick={() => {
-                  handleBookNowClick();
-                  setIsMenuOpen(false);
-                }}
-                className="bg-[#fbb034] hover:bg-[#fbb034]/90 text-black font-['Poppins',Helvetica] font-bold text-[15px] w-full py-4 rounded-none"
-              >
-                Book Now
-              </Button>
-            </div>
-          </nav>
+                )}
+                <Button
+                  onClick={handleBookNowClick}
+                  className="w-full bg-[#fbb034] hover:bg-[#fbb034]/90 text-black font-['Poppins',Helvetica] font-bold text-[15px] py-4 rounded-none"
+                >
+                  Book Now
+                </Button>
+              </div>
+            </nav>
+          </div>
         )}
       </header>
 
-      <main className="relative">
+      {/* Spacer to prevent content from being hidden under fixed header */}
+      <div className="h-24"></div>
+
+      <main className="flex-grow">
         <Outlet />
       </main>
+
+      <Footer />
     </div>
   );
 };
