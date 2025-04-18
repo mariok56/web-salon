@@ -25,9 +25,8 @@ export const Home = () => {
               Book Now
             </Button>
 
-            <Button
-              variant="outline"
-              className="border-white text-white hover:text-white hover:bg-white/10 font-['Poppins',Helvetica] font-bold text-[15px] px-[46px] py-[18px] rounded-none"
+            <Button 
+              className="bg-transparent border-2 border-white text-white hover:bg-white/20 font-['Poppins',Helvetica] font-bold text-[15px] px-[46px] py-[18px] rounded-none"
             >
               All Services
             </Button>

@@ -6,9 +6,10 @@ import { Footer } from "../screens/footer/footer";
 
 interface LayoutProps {
   isAuthenticated: boolean;
+  setIsAuthenticated: (value: boolean) => void; // Add this prop
 }
 
-export const Layout = ({ isAuthenticated }: LayoutProps) => {
+export const Layout = ({ isAuthenticated, setIsAuthenticated }: LayoutProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
@@ -51,13 +52,26 @@ export const Layout = ({ isAuthenticated }: LayoutProps) => {
     setIsMenuOpen(false);
   }, [location.pathname]);
 
+  // User logout handler
+  const handleLogout = () => {
+    // Clear user authentication state/token from localStorage
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_data');
+    
+    // Update authentication state
+    setIsAuthenticated(false);
+    
+    // Redirect to home page after logout
+    navigate("/");
+  };
+
   return (
     <div className="relative min-h-screen flex flex-col">
       <header 
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isScrolled 
             ? "bg-black py-3" 
-            : "bg-black/50 py-6"
+            : "bg-black py-6"
         }`}
       >
         <div className="max-w-6xl mx-auto px-4 flex items-center justify-between">
@@ -97,28 +111,21 @@ export const Layout = ({ isAuthenticated }: LayoutProps) => {
               <>
                 <Button
                   onClick={() => navigate("/login")}
-                  variant="outline"
-                  className="text-white border-white hover:bg-white/10"
+                  className="bg-transparent border-2 border-white text-white hover:bg-white/20"
                 >
                   Login
                 </Button>
                 <Button
                   onClick={() => navigate("/register")}
-                  variant="outline"
-                  className="text-white border-white hover:bg-white/10"
+                  className="bg-transparent border-2 border-white text-white hover:bg-white/20"
                 >
                   Register
                 </Button>
               </>
             ) : (
               <Button
-                onClick={() => {
-                  // Add logout functionality
-                  // For now just redirect to home
-                  navigate("/");
-                }}
-                variant="outline"
-                className="text-white border-white hover:bg-white/10"
+                onClick={handleLogout}
+                className="bg-transparent border-2 border-white text-white hover:bg-white/20"
               >
                 Logout
               </Button>
@@ -134,7 +141,7 @@ export const Layout = ({ isAuthenticated }: LayoutProps) => {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="absolute top-full left-0 right-0 bg-black/95 p-6 md:hidden">
+          <div className="absolute top-full left-0 right-0 bg-black p-6 md:hidden">
             <nav className="flex flex-col space-y-6">
               {navItems.map((item) => (
                 <Link
@@ -155,27 +162,21 @@ export const Layout = ({ isAuthenticated }: LayoutProps) => {
                   <>
                     <Button
                       onClick={() => navigate("/login")}
-                      variant="outline"
-                      className="w-full mb-3 text-white border-white hover:bg-white/10"
+                      className="w-full mb-3 bg-transparent border-2 border-white text-white hover:bg-white/20"
                     >
                       Login
                     </Button>
                     <Button
                       onClick={() => navigate("/register")}
-                      variant="outline"
-                      className="w-full mb-3 text-white border-white hover:bg-white/10"
+                      className="w-full mb-3 bg-transparent border-2 border-white text-white hover:bg-white/20"
                     >
                       Register
                     </Button>
                   </>
                 ) : (
                   <Button
-                    onClick={() => {
-                      // Add logout functionality
-                      navigate("/");
-                    }}
-                    variant="outline"
-                    className="w-full mb-3 text-white border-white hover:bg-white/10"
+                    onClick={handleLogout}
+                    className="w-full mb-3 bg-transparent border-2 border-white text-white hover:bg-white/20"
                   >
                     Logout
                   </Button>
