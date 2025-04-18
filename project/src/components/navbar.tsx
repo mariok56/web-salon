@@ -4,17 +4,17 @@ import { Button } from "./ui/button";
 import { Menu, X } from "lucide-react";
 import { Footer } from "../screens/footer/footer";
 import { ScrollToTop } from "./scrollup";
+import { useAuthStore } from "../store/authStore";
 
-interface LayoutProps {
-  isAuthenticated: boolean;
-  setIsAuthenticated: (value: boolean) => void; // Add this prop
-}
-
-export const Layout = ({ isAuthenticated, setIsAuthenticated }: LayoutProps) => {
+export const Layout = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // Get authentication state and logout function from Zustand store
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const logout = useAuthStore((state) => state.logout);
 
   const navItems = [
     { name: "Home", path: "/" },
@@ -55,14 +55,7 @@ export const Layout = ({ isAuthenticated, setIsAuthenticated }: LayoutProps) => 
 
   // User logout handler
   const handleLogout = () => {
-    // Clear user authentication state/token from localStorage
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_data');
-    
-    // Update authentication state
-    setIsAuthenticated(false);
-    
-    // Redirect to home page after logout
+    logout();
     navigate("/");
   };
 

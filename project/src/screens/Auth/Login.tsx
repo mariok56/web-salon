@@ -1,19 +1,20 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "../../components/ui/button";
+import { useAuthStore } from '../../store/authStore';
 
-interface LoginProps {
-  onLogin: () => void;
-}
-
-export const Login = ({ onLogin }: LoginProps) => {
+export const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const login = useAuthStore((state) => state.login);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin();
+    
+    // In a real app, you'd validate credentials with your API here
+    // For now, we'll just simulate a successful login
+    login({ email }); // Store user data
     navigate('/booking');
   };
 

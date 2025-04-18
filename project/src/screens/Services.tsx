@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Button } from "../components/ui/button";
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
 
 type Service = {
   id: number;
@@ -12,6 +14,8 @@ type Service = {
 
 export const Services = () => {
   const [activeCategory, setActiveCategory] = useState('haircuts');
+  const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   
   const categories = [
     { id: 'haircuts', name: 'Haircuts' },
@@ -103,6 +107,15 @@ export const Services = () => {
     ]
   };
 
+  // Handle Book Now button click
+  const handleBookNowClick = () => {
+    if (!isAuthenticated) {
+      navigate("/login");
+    } else {
+      navigate("/booking");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Hero Section */}
@@ -154,7 +167,10 @@ export const Services = () => {
                   <span className="block text-lg font-bold">{service.price}</span>
                   <span className="text-sm text-gray-400">{service.duration}</span>
                 </div>
-                <Button className="bg-[#fbb034] hover:bg-[#fbb034]/90 text-black rounded-none">
+                <Button 
+                  onClick={handleBookNowClick}
+                  className="bg-[#fbb034] hover:bg-[#fbb034]/90 text-black rounded-none"
+                >
                   Book Now
                 </Button>
               </div>

@@ -1,13 +1,22 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { AppRoutes } from "./routes/router";
+import { useAuthStore } from "./store/authStore";
 
 export const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
+  // Initialize auth from localStorage if available (handled by zustand persist)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  
+  // We'll check for legacy auth tokens if any
   useEffect(() => {
-    const token = localStorage.getItem("auth_token");
-    if (token) setIsAuthenticated(true);
-  }, []);
+    const legacyToken = localStorage.getItem("auth_token");
+    if (legacyToken && !isAuthenticated) {
+      // Migrate from old storage method
+      useAuthStore.getState().login();
+      // Clean up old storage items
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("user_data");
+    }
+  }, [isAuthenticated]);
 
-  return <AppRoutes isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />;
+  return <AppRoutes />;
 };

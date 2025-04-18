@@ -1,12 +1,10 @@
 import { Button } from "../components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../store/authStore";
 
-interface HomeProps {
-  isAuthenticated: boolean;
-}
-
-export const Home = ({ isAuthenticated }: HomeProps) => {
+export const Home = () => {
   const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated); // <- get from Zustand
 
   const handleBookNowClick = () => {
     if (!isAuthenticated) {
@@ -40,14 +38,14 @@ export const Home = ({ isAuthenticated }: HomeProps) => {
           </p>
 
           <div className="flex flex-col md:flex-row mt-12 md:mt-24 space-y-4 md:space-y-0 md:space-x-10">
-            <Button 
+            <Button
               onClick={handleBookNowClick}
               className="bg-[#fbb034] hover:bg-[#fbb034]/90 text-black font-['Poppins',Helvetica] font-bold text-[15px] px-[53px] py-[18px] rounded-none"
             >
               Book Now
             </Button>
 
-            <Button 
+            <Button
               onClick={handleAllServicesClick}
               className="bg-transparent border-2 border-white text-white hover:bg-white/20 font-['Poppins',Helvetica] font-bold text-[15px] px-[46px] py-[18px] rounded-none"
             >

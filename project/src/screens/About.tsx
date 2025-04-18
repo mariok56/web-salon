@@ -122,7 +122,7 @@ export const About = () => {
             <Button className="bg-[#fbb034] hover:bg-[#fbb034]/90 text-black font-bold px-8 py-4 rounded-none">
               Book an Appointment
             </Button>
-            <Button variant="outline" className="border-white text-white hover:bg-white/10 font-bold px-8 py-4 rounded-none">
+            <Button className="bg-gray-700 hover:bg-gray-600 text-white font-bold px-8 py-4 rounded-none">
               Contact Us
             </Button>
           </div>

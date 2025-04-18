@@ -1,18 +1,16 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from "../../components/ui/button";
+import { useAuthStore } from '../../store/authStore';
 
-interface RegisterProps {
-  onRegister: () => void;
-}
-
-export const Register = ({ onRegister }: RegisterProps) => {
+export const Register = () => {
   const navigate = useNavigate();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const login = useAuthStore((state) => state.login);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +18,10 @@ export const Register = ({ onRegister }: RegisterProps) => {
       setPasswordError('Passwords do not match');
       return;
     }
-    onRegister();
+    
+    // In a real app, you'd create a user account with your API here
+    // For now, we'll just simulate a successful registration
+    login({ name, email }); // Store user data
     navigate('/booking');
   };
 
