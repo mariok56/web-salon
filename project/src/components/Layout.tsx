@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Menu, X } from "lucide-react";
-import { Footer } from "./footer/footer";
+import { Footer } from "../screens/footer/footer";
 
 interface LayoutProps {
   isAuthenticated: boolean;

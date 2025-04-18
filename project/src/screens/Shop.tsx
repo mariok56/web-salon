@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "../components/ui/button";
-import { Search, ShoppingCart, Filter, ChevronDown } from "lucide-react";
+import { Search, ShoppingCart, Filter, ChevronDown, X, Plus, Minus, Trash2 } from "lucide-react";
 
 type Product = {
   id: number;
@@ -15,12 +15,28 @@ type Product = {
   inStock: boolean;
 };
 
+type CartItem = {
+  product: Product;
+  quantity: number;
+};
+
 export const Shop = () => {
-  const [cartCount, setCartCount] = useState(0);
+  // State for cart
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  
+  // State for filters
   const [activeCategory, setActiveCategory] = useState('all');
   const [activeSorting, setActiveSorting] = useState('featured');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  
+  // State for newsletter
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
+  
+  // Calculate cart count from cart items
+  const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
   
   // Sample product data
   const products: Product[] = [
@@ -153,9 +169,89 @@ export const Shop = () => {
     }
   });
   
-  const addToCart = () => {
-    setCartCount(prevCount => prevCount + 1);
+  // Cart functions
+  const addToCart = (product: Product) => {
+    setCart(prevCart => {
+      const existingItem = prevCart.find(item => item.product.id === product.id);
+      
+      if (existingItem) {
+        // If item already in cart, increase quantity
+        return prevCart.map(item => 
+          item.product.id === product.id 
+            ? { ...item, quantity: item.quantity + 1 } 
+            : item
+        );
+      } else {
+        // Add new item to cart
+        return [...prevCart, { product, quantity: 1 }];
+      }
+    });
+    
+    // Show cart when adding items
+    setIsCartOpen(true);
   };
+  
+  const updateQuantity = (productId: number, newQuantity: number) => {
+    if (newQuantity < 1) {
+      removeFromCart(productId);
+      return;
+    }
+    
+    setCart(prevCart => 
+      prevCart.map(item => 
+        item.product.id === productId 
+          ? { ...item, quantity: newQuantity } 
+          : item
+      )
+    );
+  };
+  
+  const removeFromCart = (productId: number) => {
+    setCart(prevCart => prevCart.filter(item => item.product.id !== productId));
+  };
+  
+  const calculateCartTotal = () => {
+    return cart.reduce((total, item) => {
+      const price = item.product.salePrice || item.product.price;
+      return total + (price * item.quantity);
+    }, 0);
+  };
+  
+  // Handle newsletter subscription
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email.trim() && email.includes('@')) {
+      // In a real app, you would send this to an API
+      console.log(`Subscribing email: ${email}`);
+      setSubscribed(true);
+      setEmail('');
+      
+      // Reset after 3 seconds
+      setTimeout(() => setSubscribed(false), 3000);
+    }
+  };
+  
+  // Close cart when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const cartElement = document.getElementById('shopping-cart');
+      const cartButton = document.getElementById('cart-button');
+      
+      if (
+        isCartOpen && 
+        cartElement && 
+        !cartElement.contains(event.target as Node) &&
+        !cartButton?.contains(event.target as Node)
+      ) {
+        setIsCartOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isCartOpen]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -187,7 +283,11 @@ export const Shop = () => {
           </div>
           
           <div className="flex items-center">
-            <button className="relative p-2 mr-2">
+            <button 
+              id="cart-button"
+              className="relative p-2 mr-2"
+              onClick={() => setIsCartOpen(!isCartOpen)}
+            >
               <ShoppingCart size={24} className="text-white" />
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#fbb034] text-black text-xs flex items-center justify-center font-bold">
@@ -205,6 +305,86 @@ export const Shop = () => {
             </button>
           </div>
         </div>
+        
+        {/* Shopping Cart Dropdown */}
+        {isCartOpen && (
+          <div 
+            id="shopping-cart"
+            className="absolute right-4 md:right-8 top-64 md:top-44 z-50 w-full max-w-md bg-gray-800 border border-gray-700 shadow-lg"
+          >
+            <div className="p-4 border-b border-gray-700 flex justify-between items-center">
+              <h3 className="font-bold text-lg">Shopping Cart ({cartCount})</h3>
+              <button onClick={() => setIsCartOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+            
+            <div className="max-h-96 overflow-y-auto">
+              {cart.length > 0 ? (
+                <div className="divide-y divide-gray-700">
+                  {cart.map(item => (
+                    <div key={item.product.id} className="p-4 flex items-center">
+                      <div className="h-16 w-16 bg-gray-700 mr-4">
+                        <img
+                          src="/api/placeholder/80/80"
+                          alt={item.product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-grow">
+                        <div className="text-sm text-gray-400">{item.product.brand}</div>
+                        <div className="font-medium">{item.product.name}</div>
+                        <div className="text-sm mt-1">
+                          ${(item.product.salePrice || item.product.price).toFixed(2)}
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <button
+                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                          className="p-1 text-gray-400 hover:text-white"
+                        >
+                          <Minus size={16} />
+                        </button>
+                        <span className="w-8 text-center">{item.quantity}</span>
+                        <button
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          className="p-1 text-gray-400 hover:text-white"
+                        >
+                          <Plus size={16} />
+                        </button>
+                        <button
+                          onClick={() => removeFromCart(item.product.id)}
+                          className="p-1 ml-2 text-gray-400 hover:text-red-500"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-8 text-center text-gray-400">
+                  Your cart is empty
+                </div>
+              )}
+            </div>
+            
+            {cart.length > 0 && (
+              <div className="p-4 border-t border-gray-700">
+                <div className="flex justify-between mb-4">
+                  <span className="font-bold">Total:</span>
+                  <span className="font-bold">${calculateCartTotal().toFixed(2)}</span>
+                </div>
+                <Button
+                  onClick={() => alert('Checkout functionality would be implemented here')}
+                  className="w-full bg-[#fbb034] hover:bg-[#fbb034]/90 text-black font-bold"
+                >
+                  Checkout
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Filters Sidebar - Hidden on mobile unless toggled */}
@@ -246,6 +426,18 @@ export const Shop = () => {
                 ))}
               </div>
             </div>
+            
+            {/* Additional filter for in-stock only */}
+            <div>
+              <h3 className="text-xl font-bold mb-4 border-b border-gray-700 pb-2">Availability</h3>
+              <label className="flex items-center px-3 py-2 cursor-pointer text-gray-300 hover:bg-gray-800">
+                <input
+                  type="checkbox"
+                  className="mr-2 h-4 w-4 accent-[#fbb034]"
+                />
+                In Stock Only
+              </label>
+            </div>
           </div>
           
           {/* Products Grid */}
@@ -280,6 +472,18 @@ export const Shop = () => {
                           <span className="bg-gray-800 text-white px-4 py-2 font-bold">OUT OF STOCK</span>
                         </div>
                       )}
+                      
+                      {/* Quick View Button (hidden until hover) */}
+                      {product.inStock && (
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            onClick={() => addToCart(product)}
+                            className="bg-[#fbb034] hover:bg-[#fbb034]/90 text-black font-bold"
+                          >
+                            Quick Add
+                          </Button>
+                        </div>
+                      )}
                     </div>
                     
                     {/* Product Info */}
@@ -298,7 +502,7 @@ export const Shop = () => {
                           )}
                         </div>
                         <Button
-                          onClick={addToCart}
+                          onClick={() => addToCart(product)}
                           disabled={!product.inStock}
                           className="bg-[#fbb034] hover:bg-[#fbb034]/90 text-black rounded-none px-3 py-1 text-sm disabled:bg-gray-700 disabled:text-gray-500"
                         >
@@ -336,12 +540,22 @@ export const Shop = () => {
               .filter(product => product.bestseller)
               .map(product => (
                 <div key={product.id} className="bg-gray-900 border border-gray-700 group">
-                  <div className="aspect-square bg-gray-700 overflow-hidden">
+                  <div className="relative aspect-square bg-gray-700 overflow-hidden">
                     <img 
                       src="/api/placeholder/250/250" 
                       alt={product.name} 
                       className="w-full h-full object-cover transition-transform group-hover:scale-105" 
                     />
+                    
+                    {/* Quick View Button (hidden until hover) */}
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button
+                        onClick={() => addToCart(product)}
+                        className="bg-[#fbb034] hover:bg-[#fbb034]/90 text-black font-bold"
+                      >
+                        Quick Add
+                      </Button>
+                    </div>
                   </div>
                   <div className="p-4">
                     <div className="text-sm text-gray-400">{product.brand}</div>
@@ -349,7 +563,7 @@ export const Shop = () => {
                     <div className="flex justify-between items-center">
                       <span className="font-bold">${(product.salePrice || product.price).toFixed(2)}</span>
                       <Button
-                        onClick={addToCart}
+                        onClick={() => addToCart(product)}
                         className="bg-[#fbb034] hover:bg-[#fbb034]/90 text-black rounded-none px-3 py-1 text-sm"
                       >
                         Add to Cart
@@ -369,16 +583,29 @@ export const Shop = () => {
           <p className="text-gray-400 mb-8">
             Subscribe to get special offers, free giveaways, and product launches.
           </p>
-          <div className="flex flex-col sm:flex-row">
+          <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row">
             <input
               type="email"
               placeholder="Your email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="flex-grow p-3 bg-gray-800 border border-gray-700 text-white outline-none sm:rounded-none"
+              required
             />
-            <Button className="mt-2 sm:mt-0 bg-[#fbb034] hover:bg-[#fbb034]/90 text-black font-bold px-8 py-3 rounded-none">
+            <Button 
+              type="submit" 
+              className="mt-2 sm:mt-0 bg-[#fbb034] hover:bg-[#fbb034]/90 text-black font-bold px-8 py-3 rounded-none"
+            >
               Subscribe
             </Button>
-          </div>
+          </form>
+          
+          {/* Subscription confirmation message */}
+          {subscribed && (
+            <div className="mt-4 p-2 bg-green-800/50 text-green-400 border border-green-700">
+              Thank you for subscribing! You'll receive our next newsletter soon.
+            </div>
+          )}
         </div>
       </div>
     </div>
