@@ -6,25 +6,25 @@ export const About = () => {
       name: "Michael Thompson",
       role: "Founder & Master Stylist",
       bio: "With over 15 years of experience, Michael founded Choppers with a vision to blend classic barbering with modern hair styling techniques.",
-      image: "/team/michael.jpg"
+      image: "./owner.png"
     },
     {
       name: "Sarah Johnson",
       role: "Senior Colorist",
       bio: "Sarah specializes in creative color techniques and has won multiple awards for her innovative approaches to hair coloring.",
-      image: "/team/sarah.jpg"
+      image: "./colorist.png"
     },
     {
       name: "David Wilson",
       role: "Styling Expert",
       bio: "David's celebrity clientele and fashion week experience brings high-end styling techniques to every client's experience.",
-      image: "/team/david.jpg"
+      image: "./styling.png"
     },
     {
       name: "Emma Rodriguez",
       role: "Treatment Specialist",
       bio: "Emma's specialized knowledge in hair treatments helps clients achieve healthier, more vibrant hair with customized approaches.",
-      image: "/team/emma.jpg"
+      image: "./last.png"
     }
   ];
 
@@ -99,7 +99,7 @@ export const About = () => {
           {teamMembers.map((member, index) => (
             <div key={index} className="bg-gray-800 group">
               <div className="aspect-square bg-gray-700 overflow-hidden">
-                <img src="/api/placeholder/300/300" alt={member.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                <img src={member.image} alt={member.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-bold">{member.name}</h3>
