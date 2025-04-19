@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect,useCallback } from 'react';
 import { create } from 'zustand';
 import { Button } from "../components/ui/button";
 import { Search, ShoppingCart, Filter, ChevronDown, X, Plus, Minus, Trash2, CreditCard, ArrowLeft } from "lucide-react";
+import _ from 'lodash';
 
 // Product type definition
 type Product = {
@@ -173,6 +174,7 @@ export const Shop = () => {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
   
   // Calculate cart count and total
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
@@ -348,6 +350,22 @@ export const Shop = () => {
       }, 5000);
     }
   };
+  
+
+// Create a debounced function for search
+const debouncedSearch = useCallback(
+  _.debounce((term: string) => {
+    setSearchTerm(term);
+  }, 500),
+  []
+);
+
+// Handle search input change
+const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const value = e.target.value;
+  setSearchInput(value);
+  debouncedSearch(value);
+};
   
   // Close cart when clicking outside
   useEffect(() => {
@@ -656,13 +674,13 @@ export const Shop = () => {
         {/* Search and Cart Row */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-8">
           <div className="relative w-full md:w-96 mb-4 md:mb-0">
-            <input
+          <input
               type="text"
               placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full p-3 pl-10 bg-gray-800 border border-gray-700 text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none"
-            />
+               value={searchInput}
+                onChange={handleSearchChange}
+                className="w-full p-3 pl-10 bg-gray-800 border border-gray-700 text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none"
+               />
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
           
@@ -694,7 +712,7 @@ export const Shop = () => {
         {isCartOpen && (
           <div 
             id="shopping-cart"
-            className="absolute right-4 md:right-8 top-64 md:top-44 z-50 w-full max-w-md bg-gray-800 border border-gray-700 shadow-lg"
+            className="fixed right-4 md:right-8 top-20 z-50 w-full max-w-md bg-gray-800 border border-gray-700 shadow-lg"
           >
             <div className="p-4 border-b border-gray-700 flex justify-between items-center">
               <h3 className="font-bold text-lg">Shopping Cart ({cartCount})</h3>
