@@ -1,28 +1,65 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { z } from 'zod';
+import { useForm, SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from "../../components/ui/button";
 import { useAuthStore } from '../../store/authStore';
 
+// Define validation schema with Zod
+const registerSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string().min(6, 'Password must be at least 6 characters'),
+  terms: z.boolean().refine(val => val === true, {
+    message: 'You must accept the terms and conditions',
+  }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+// Infer TypeScript type from schema
+type RegisterFormValues = z.infer<typeof registerSchema>;
+
 export const Register = () => {
   const navigate = useNavigate();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const login = useAuthStore((state) => state.login);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password !== confirmPassword) {
-      setPasswordError('Passwords do not match');
-      return;
+  const [authError, setAuthError] = useState<string | null>(null);
+  const { register: registerUser, isLoading, error, clearError } = useAuthStore();
+  
+  const { 
+    register, 
+    handleSubmit, 
+    formState: { errors } 
+  } = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      terms: false,
     }
+  });
+
+  const onSubmit: SubmitHandler<RegisterFormValues> = async (data) => {
+    // Clear any previous errors
+    setAuthError(null);
+    clearError();
     
-    // In a real app, you'd create a user account with your API here
-    // For now, we'll just simulate a successful registration
-    login({ name, email }); // Store user data
-    navigate('/booking');
+    // Attempt to register
+    const result = await registerUser({
+      name: data.name,
+      email: data.email,
+      password: data.password,
+    });
+    
+    if (result.success) {
+      navigate('/booking');
+    } else {
+      setAuthError(result.message);
+    }
   };
 
   return (
@@ -31,9 +68,9 @@ export const Register = () => {
         <div className="max-w-md w-full bg-gray-900 border border-gray-800 p-8">
           <div className="flex justify-center mb-6">
             <Link to="/" className="flex items-center">
-              <img className="w-[52px] h-9" alt="Logo" src="/logo.svg" />
+              <img className="w-12 h-9" alt="Logo" src="/logo.svg" />
               <img
-                className="w-[51px] h-[16px] ml-1.5"
+                className="w-12 h-4 ml-2"
                 alt="Saloon"
                 src="/saloon.svg"
               />
@@ -42,7 +79,13 @@ export const Register = () => {
           
           <h2 className="text-2xl font-bold text-white text-center mb-6">Create an Account</h2>
           
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          {(authError || error) && (
+            <div className="bg-red-900/40 border border-red-800 text-red-200 px-4 py-3 rounded mb-6">
+              {authError || error}
+            </div>
+          )}
+          
+          <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1">
                 Full Name
@@ -50,12 +93,13 @@ export const Register = () => {
               <input
                 type="text"
                 id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full p-3 bg-gray-800 border border-gray-700 text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none"
+                className={`w-full p-3 bg-gray-800 border ${errors.name ? 'border-red-500' : 'border-gray-700'} text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none`}
                 placeholder="Enter your full name"
-                required
+                {...register('name')}
               />
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-500">{errors.name.message}</p>
+              )}
             </div>
             
             <div>
@@ -65,12 +109,13 @@ export const Register = () => {
               <input
                 type="email"
                 id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full p-3 bg-gray-800 border border-gray-700 text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none"
+                className={`w-full p-3 bg-gray-800 border ${errors.email ? 'border-red-500' : 'border-gray-700'} text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none`}
                 placeholder="Enter your email"
-                required
+                {...register('email')}
               />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
+              )}
             </div>
             
             <div>
@@ -80,15 +125,13 @@ export const Register = () => {
               <input
                 type="password"
                 id="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setPasswordError('');
-                }}
-                className="w-full p-3 bg-gray-800 border border-gray-700 text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none"
+                className={`w-full p-3 bg-gray-800 border ${errors.password ? 'border-red-500' : 'border-gray-700'} text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none`}
                 placeholder="Create a password"
-                required
+                {...register('password')}
               />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>
+              )}
             </div>
             
             <div>
@@ -98,29 +141,21 @@ export const Register = () => {
               <input
                 type="password"
                 id="confirmPassword"
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value);
-                  setPasswordError('');
-                }}
-                className={`w-full p-3 bg-gray-800 border ${
-                  passwordError ? 'border-red-500' : 'border-gray-700'
-                } text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none`}
+                className={`w-full p-3 bg-gray-800 border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-700'} text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none`}
                 placeholder="Confirm your password"
-                required
+                {...register('confirmPassword')}
               />
-              {passwordError && (
-                <p className="mt-1 text-sm text-red-500">{passwordError}</p>
+              {errors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-500">{errors.confirmPassword.message}</p>
               )}
             </div>
             
             <div className="flex items-center">
               <input
                 id="terms"
-                name="terms"
                 type="checkbox"
-                className="h-4 w-4 text-[#fbb034] focus:ring-[#fbb034] bg-gray-800 border-gray-700"
-                required
+                className={`h-4 w-4 text-[#fbb034] focus:ring-[#fbb034] bg-gray-800 border-gray-700 ${errors.terms ? 'border-red-500' : ''}`}
+                {...register('terms')}
               />
               <label htmlFor="terms" className="ml-2 block text-sm text-gray-300">
                 I agree to the{' '}
@@ -133,12 +168,16 @@ export const Register = () => {
                 </a>
               </label>
             </div>
+            {errors.terms && (
+              <p className="mt-1 text-sm text-red-500">{errors.terms.message}</p>
+            )}
             
             <Button
               type="submit"
+              disabled={isLoading}
               className="w-full bg-[#fbb034] hover:bg-[#fbb034]/90 text-black font-bold py-3 rounded-none"
             >
-              Create Account
+              {isLoading ? 'Creating Account...' : 'Create Account'}
             </Button>
             
             <p className="text-center text-sm text-gray-400">
