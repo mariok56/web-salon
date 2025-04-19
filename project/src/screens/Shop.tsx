@@ -190,7 +190,7 @@ export const Shop = () => {
       name: "Hydrating Shampoo",
       brand: "Kerastase",
       price: 28.99,
-      image: "/products/shampoo-1.jpg",
+      image: "./hydrating.png",
       category: "shampoo",
       bestseller: true,
       isNew: false,
@@ -201,7 +201,7 @@ export const Shop = () => {
       name: "Repair Conditioner",
       brand: "Oribe",
       price: 32.99,
-      image: "/products/conditioner-1.jpg",
+      image: "./repair.png",
       category: "conditioner",
       bestseller: false,
       isNew: true,
@@ -213,7 +213,7 @@ export const Shop = () => {
       brand: "Aveda",
       price: 24.99,
       salePrice: 19.99,
-      image: "/products/styling-1.jpg",
+      image: "/pomade.png",
       category: "styling",
       bestseller: false,
       isNew: false,
@@ -224,7 +224,7 @@ export const Shop = () => {
       name: "Hair Oil Treatment",
       brand: "Moroccanoil",
       price: 46.99,
-      image: "/products/treatment-1.jpg",
+      image: "./hairoil.png",
       category: "treatment",
       bestseller: true,
       isNew: false,
@@ -235,7 +235,7 @@ export const Shop = () => {
       name: "Volume Spray",
       brand: "Kevin Murphy",
       price: 29.99,
-      image: "/products/styling-2.jpg",
+      image: "/spray.png",
       category: "styling",
       bestseller: false,
       isNew: true,
@@ -269,7 +269,7 @@ export const Shop = () => {
       name: "Deep Repair Mask",
       brand: "Redken",
       price: 38.99,
-      image: "/products/treatment-2.jpg",
+      image: "./deep.png",
       category: "treatment",
       bestseller: true,
       isNew: false,
@@ -728,7 +728,7 @@ const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                     <div key={item.product.id} className="p-4 flex items-center">
                       <div className="h-16 w-16 bg-gray-700 mr-4">
                         <img
-                          src="/api/placeholder/80/80"
+                          src={item.product.image}
                           alt={item.product.name}
                           className="w-full h-full object-cover"
                         />
@@ -867,9 +867,9 @@ const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                     {/* Product Image */}
                     <div className="relative aspect-square bg-gray-700 overflow-hidden">
                       <img 
-                        src="/api/placeholder/300/300" 
+                        src={product.image} 
                         alt={product.name} 
-                        className="w-full h-full object-cover transition-transform group-hover:scale-105" 
+                        className="w-full h-full object-cover" 
                       />
                       
                       {/* Sale or New Badge */}
@@ -960,9 +960,9 @@ const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                 <div key={product.id} className="bg-gray-900 border border-gray-700 group">
                   <div className="relative aspect-square bg-gray-700 overflow-hidden">
                     <img 
-                      src="/api/placeholder/250/250" 
+                      src={product.image} 
                       alt={product.name} 
-                      className="w-full h-full object-cover transition-transform group-hover:scale-105" 
+                      className="w-full h-full object-cover" 
                     />
                     
                     {/* Quick View Button (hidden until hover) */}
