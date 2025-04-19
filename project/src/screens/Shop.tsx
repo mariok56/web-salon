@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { create } from 'zustand';
 import { Button } from "../components/ui/button";
-import { Search, ShoppingCart, Filter, ChevronDown, X, Plus, Minus, Trash2 } from "lucide-react";
+import { Search, ShoppingCart, Filter, ChevronDown, X, Plus, Minus, Trash2, CreditCard, ArrowLeft } from "lucide-react";
 
+// Product type definition
 type Product = {
   id: number;
   name: string;
@@ -15,28 +17,169 @@ type Product = {
   inStock: boolean;
 };
 
+// Cart item type definition
 type CartItem = {
   product: Product;
   quantity: number;
 };
 
-export const Shop = () => {
-  // State for cart
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
+// Checkout form data type
+type CheckoutFormData = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  address: string;
+  city: string;
+  zipCode: string;
+  country: string;
+  cardNumber: string;
+  cardExpiry: string;
+  cardCVC: string;
+};
+
+// Define our Zustand store
+interface ShopState {
+  cart: CartItem[];
+  isCartOpen: boolean;
+  isCheckoutOpen: boolean;
+  checkoutStep: number;
+  checkoutFormData: CheckoutFormData;
+  addToCart: (product: Product) => void;
+  updateQuantity: (productId: number, newQuantity: number) => void;
+  removeFromCart: (productId: number) => void;
+  clearCart: () => void;
+  toggleCart: () => void;
+  closeCart: () => void;
+  openCheckout: () => void;
+  closeCheckout: () => void;
+  setCheckoutStep: (step: number) => void;
+  updateCheckoutForm: (field: keyof CheckoutFormData, value: string) => void;
+}
+
+// Create the store
+const useShopStore = create<ShopState>((set) => ({
+  cart: [],
+  isCartOpen: false,
+  isCheckoutOpen: false,
+  checkoutStep: 1,
+  checkoutFormData: {
+    firstName: '',
+    lastName: '',
+    email: '',
+    address: '',
+    city: '',
+    zipCode: '',
+    country: '',
+    cardNumber: '',
+    cardExpiry: '',
+    cardCVC: '',
+  },
   
-  // State for filters
+  addToCart: (product) => set((state) => {
+    const existingItem = state.cart.find(item => item.product.id === product.id);
+    
+    if (existingItem) {
+      return {
+        cart: state.cart.map(item => 
+          item.product.id === product.id 
+            ? { ...item, quantity: item.quantity + 1 } 
+            : item
+        ),
+        isCartOpen: true
+      };
+    } else {
+      return {
+        cart: [...state.cart, { product, quantity: 1 }],
+        isCartOpen: true
+      };
+    }
+  }),
+  
+  updateQuantity: (productId, newQuantity) => set((state) => {
+    if (newQuantity < 1) {
+      return {
+        cart: state.cart.filter(item => item.product.id !== productId)
+      };
+    }
+    
+    return {
+      cart: state.cart.map(item => 
+        item.product.id === productId 
+          ? { ...item, quantity: newQuantity } 
+          : item
+      )
+    };
+  }),
+  
+  removeFromCart: (productId) => set((state) => ({
+    cart: state.cart.filter(item => item.product.id !== productId)
+  })),
+  
+  clearCart: () => set({ cart: [] }),
+  
+  toggleCart: () => set((state) => ({ 
+    isCartOpen: !state.isCartOpen,
+    isCheckoutOpen: false 
+  })),
+  
+  closeCart: () => set({ isCartOpen: false }),
+  
+  openCheckout: () => set({ 
+    isCartOpen: false,
+    isCheckoutOpen: true,
+    checkoutStep: 1
+  }),
+  
+  closeCheckout: () => set({ 
+    isCheckoutOpen: false,
+    checkoutStep: 1
+  }),
+  
+  setCheckoutStep: (step) => set({ checkoutStep: step }),
+  
+  updateCheckoutForm: (field, value) => set((state) => ({
+    checkoutFormData: {
+      ...state.checkoutFormData,
+      [field]: value
+    }
+  }))
+}));
+
+export const Shop = () => {
+  // Use our zustand store
+  const { 
+    cart, 
+    isCartOpen, 
+    isCheckoutOpen,
+    checkoutStep,
+    checkoutFormData,
+    addToCart, 
+    updateQuantity, 
+    removeFromCart,
+    clearCart,
+    toggleCart,
+    closeCart,
+    openCheckout,
+    closeCheckout,
+    setCheckoutStep,
+    updateCheckoutForm
+  } = useShopStore();
+  
+  // Local state
   const [activeCategory, setActiveCategory] = useState('all');
   const [activeSorting, setActiveSorting] = useState('featured');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  
-  // State for newsletter
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [orderPlaced, setOrderPlaced] = useState(false);
   
-  // Calculate cart count from cart items
+  // Calculate cart count and total
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
+  const cartTotal = cart.reduce((total, item) => {
+    const price = item.product.salePrice || item.product.price;
+    return total + (price * item.quantity);
+  }, 0);
   
   // Sample product data
   const products: Product[] = [
@@ -147,7 +290,7 @@ export const Shop = () => {
     { id: 'price-high', name: 'Price: High to Low' }
   ];
   
-  // Filter products based on active category and search term
+  // Filter products
   const filteredProducts = products.filter(product => {
     const matchesCategory = activeCategory === 'all' || product.category === activeCategory;
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -155,7 +298,7 @@ export const Shop = () => {
     return matchesCategory && matchesSearch;
   });
   
-  // Sort products based on active sorting
+  // Sort products
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     switch (activeSorting) {
       case 'newest':
@@ -169,65 +312,40 @@ export const Shop = () => {
     }
   });
   
-  // Cart functions
-  const addToCart = (product: Product) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.product.id === product.id);
-      
-      if (existingItem) {
-        // If item already in cart, increase quantity
-        return prevCart.map(item => 
-          item.product.id === product.id 
-            ? { ...item, quantity: item.quantity + 1 } 
-            : item
-        );
-      } else {
-        // Add new item to cart
-        return [...prevCart, { product, quantity: 1 }];
-      }
-    });
-    
-    // Show cart when adding items
-    setIsCartOpen(true);
-  };
-  
-  const updateQuantity = (productId: number, newQuantity: number) => {
-    if (newQuantity < 1) {
-      removeFromCart(productId);
-      return;
-    }
-    
-    setCart(prevCart => 
-      prevCart.map(item => 
-        item.product.id === productId 
-          ? { ...item, quantity: newQuantity } 
-          : item
-      )
-    );
-  };
-  
-  const removeFromCart = (productId: number) => {
-    setCart(prevCart => prevCart.filter(item => item.product.id !== productId));
-  };
-  
-  const calculateCartTotal = () => {
-    return cart.reduce((total, item) => {
-      const price = item.product.salePrice || item.product.price;
-      return total + (price * item.quantity);
-    }, 0);
-  };
-  
   // Handle newsletter subscription
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
     if (email.trim() && email.includes('@')) {
-      // In a real app, you would send this to an API
       console.log(`Subscribing email: ${email}`);
       setSubscribed(true);
       setEmail('');
-      
-      // Reset after 3 seconds
       setTimeout(() => setSubscribed(false), 3000);
+    }
+  };
+  
+  // Handle checkout form submission
+  const handleCheckoutSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (checkoutStep < 3) {
+      setCheckoutStep(checkoutStep + 1);
+    } else {
+      // Process the payment and order
+      console.log('Order submitted:', {
+        customer: checkoutFormData,
+        items: cart,
+        total: cartTotal
+      });
+      
+      // Show order confirmation
+      setOrderPlaced(true);
+      
+      // Clear cart after successful order
+      setTimeout(() => {
+        clearCart();
+        closeCheckout();
+        setOrderPlaced(false);
+      }, 5000);
     }
   };
   
@@ -243,7 +361,7 @@ export const Shop = () => {
         !cartElement.contains(event.target as Node) &&
         !cartButton?.contains(event.target as Node)
       ) {
-        setIsCartOpen(false);
+        closeCart();
       }
     };
     
@@ -251,7 +369,273 @@ export const Shop = () => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isCartOpen]);
+  }, [isCartOpen, closeCart]);
+
+  // Render checkout steps
+  const renderCheckoutStep = () => {
+    if (orderPlaced) {
+      return (
+        <div className="p-8 text-center">
+          <div className="bg-green-800/30 text-green-400 p-4 mb-6 border border-green-700">
+            <h3 className="font-bold text-xl mb-2">Order Confirmed!</h3>
+            <p>Thank you for your purchase. Your order has been received.</p>
+            <p className="mt-2 text-sm">Order #: {Math.floor(Math.random() * 10000000)}</p>
+          </div>
+          <p className="text-gray-400 mb-4">A confirmation email has been sent to {checkoutFormData.email}</p>
+          <Button
+            onClick={() => {
+              closeCheckout();
+              clearCart();
+            }}
+            className="bg-[#fbb034] hover:bg-[#fbb034]/90 text-black font-bold"
+          >
+            Continue Shopping
+          </Button>
+        </div>
+      );
+    }
+    
+    switch (checkoutStep) {
+      case 1:
+        return (
+          <form onSubmit={handleCheckoutSubmit} className="p-6">
+            <h3 className="font-bold text-xl mb-6">Contact Information</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">First Name</label>
+                <input
+                  type="text"
+                  required
+                  value={checkoutFormData.firstName}
+                  onChange={(e) => updateCheckoutForm('firstName', e.target.value)}
+                  className="w-full p-3 bg-gray-800 border border-gray-700 text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Last Name</label>
+                <input
+                  type="text"
+                  required
+                  value={checkoutFormData.lastName}
+                  onChange={(e) => updateCheckoutForm('lastName', e.target.value)}
+                  className="w-full p-3 bg-gray-800 border border-gray-700 text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm text-gray-400 mb-1">Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={checkoutFormData.email}
+                  onChange={(e) => updateCheckoutForm('email', e.target.value)}
+                  className="w-full p-3 bg-gray-800 border border-gray-700 text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-between mt-8">
+              <Button
+                type="button"
+                onClick={closeCheckout}
+                className="bg-gray-700 hover:bg-gray-600 text-white"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-[#fbb034] hover:bg-[#fbb034]/90 text-black font-bold"
+              >
+                Continue to Shipping
+              </Button>
+            </div>
+          </form>
+        );
+      
+      case 2:
+        return (
+          <form onSubmit={handleCheckoutSubmit} className="p-6">
+            <h3 className="font-bold text-xl mb-6">Shipping Address</h3>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Street Address</label>
+                <input
+                  type="text"
+                  required
+                  value={checkoutFormData.address}
+                  onChange={(e) => updateCheckoutForm('address', e.target.value)}
+                  className="w-full p-3 bg-gray-800 border border-gray-700 text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">City</label>
+                  <input
+                    type="text"
+                    required
+                    value={checkoutFormData.city}
+                    onChange={(e) => updateCheckoutForm('city', e.target.value)}
+                    className="w-full p-3 bg-gray-800 border border-gray-700 text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Zip/Postal Code</label>
+                  <input
+                    type="text"
+                    required
+                    value={checkoutFormData.zipCode}
+                    onChange={(e) => updateCheckoutForm('zipCode', e.target.value)}
+                    className="w-full p-3 bg-gray-800 border border-gray-700 text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Country</label>
+                <select
+                  required
+                  value={checkoutFormData.country}
+                  onChange={(e) => updateCheckoutForm('country', e.target.value)}
+                  className="w-full p-3 bg-gray-800 border border-gray-700 text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none"
+                >
+                  <option value="">Select Country</option>
+                  <option value="US">United States</option>
+                  <option value="CA">Canada</option>
+                  <option value="UK">United Kingdom</option>
+                  <option value="AU">Australia</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex justify-between mt-8">
+              <Button
+                type="button"
+                onClick={() => setCheckoutStep(1)}
+                className="flex items-center bg-gray-700 hover:bg-gray-600 text-white"
+              >
+                <ArrowLeft size={16} className="mr-2" />
+                Back
+              </Button>
+              <Button
+                type="submit"
+                className="bg-[#fbb034] hover:bg-[#fbb034]/90 text-black font-bold"
+              >
+                Continue to Payment
+              </Button>
+            </div>
+          </form>
+        );
+      
+      case 3:
+        return (
+          <form onSubmit={handleCheckoutSubmit} className="p-6">
+            <h3 className="font-bold text-xl mb-6">Payment Information</h3>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Card Number</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    placeholder="•••• •••• •••• ••••"
+                    value={checkoutFormData.cardNumber}
+                    onChange={(e) => {
+                      // Only allow numbers and format with spaces
+                      const val = e.target.value.replace(/\D/g, '').substring(0, 16);
+                      const formatVal = val.replace(/(.{4})/g, '$1 ').trim();
+                      updateCheckoutForm('cardNumber', formatVal);
+                    }}
+                    className="w-full p-3 pl-10 bg-gray-800 border border-gray-700 text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none"
+                  />
+                  <CreditCard size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Expiry Date</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="MM/YY"
+                    value={checkoutFormData.cardExpiry}
+                    onChange={(e) => {
+                      // Format as MM/YY
+                      const val = e.target.value.replace(/\D/g, '').substring(0, 4);
+                      if (val.length > 2) {
+                        updateCheckoutForm('cardExpiry', `${val.substring(0, 2)}/${val.substring(2)}`);
+                      } else {
+                        updateCheckoutForm('cardExpiry', val);
+                      }
+                    }}
+                    className="w-full p-3 bg-gray-800 border border-gray-700 text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">CVC</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="•••"
+                    value={checkoutFormData.cardCVC}
+                    onChange={(e) => {
+                      // Only allow 3-4 numbers
+                      const val = e.target.value.replace(/\D/g, '').substring(0, 4);
+                      updateCheckoutForm('cardCVC', val);
+                    }}
+                    className="w-full p-3 bg-gray-800 border border-gray-700 text-white focus:ring-[#fbb034] focus:border-[#fbb034] outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-6 p-4 bg-gray-800 border border-gray-700">
+              <h4 className="font-bold mb-2">Order Summary</h4>
+              
+              <div className="space-y-2 mb-4">
+                <div className="flex justify-between text-sm">
+                  <span>Subtotal</span>
+                  <span>${cartTotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Shipping</span>
+                  <span>$5.99</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Tax</span>
+                  <span>${(cartTotal * 0.08).toFixed(2)}</span>
+                </div>
+              </div>
+              
+              <div className="flex justify-between font-bold border-t border-gray-700 pt-2">
+                <span>Total</span>
+                <span>${(cartTotal + 5.99 + cartTotal * 0.08).toFixed(2)}</span>
+              </div>
+            </div>
+            
+            <div className="flex justify-between mt-8">
+              <Button
+                type="button"
+                onClick={() => setCheckoutStep(2)}
+                className="flex items-center bg-gray-700 hover:bg-gray-600 text-white"
+              >
+                <ArrowLeft size={16} className="mr-2" />
+                Back
+              </Button>
+              <Button
+                type="submit"
+                className="bg-[#fbb034] hover:bg-[#fbb034]/90 text-black font-bold"
+              >
+                Complete Order
+              </Button>
+            </div>
+          </form>
+        );
+      
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -286,7 +670,7 @@ export const Shop = () => {
             <button 
               id="cart-button"
               className="relative p-2 mr-2"
-              onClick={() => setIsCartOpen(!isCartOpen)}
+              onClick={toggleCart}
             >
               <ShoppingCart size={24} className="text-white" />
               {cartCount > 0 && (
@@ -314,7 +698,7 @@ export const Shop = () => {
           >
             <div className="p-4 border-b border-gray-700 flex justify-between items-center">
               <h3 className="font-bold text-lg">Shopping Cart ({cartCount})</h3>
-              <button onClick={() => setIsCartOpen(false)}>
+              <button onClick={closeCart}>
                 <X size={18} />
               </button>
             </div>
@@ -373,16 +757,32 @@ export const Shop = () => {
               <div className="p-4 border-t border-gray-700">
                 <div className="flex justify-between mb-4">
                   <span className="font-bold">Total:</span>
-                  <span className="font-bold">${calculateCartTotal().toFixed(2)}</span>
+                  <span className="font-bold">${cartTotal.toFixed(2)}</span>
                 </div>
                 <Button
-                  onClick={() => alert('Checkout functionality would be implemented here')}
+                  onClick={openCheckout}
                   className="w-full bg-[#fbb034] hover:bg-[#fbb034]/90 text-black font-bold"
                 >
                   Checkout
                 </Button>
               </div>
             )}
+          </div>
+        )}
+        
+        {/* Checkout Overlay */}
+        {isCheckoutOpen && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+            <div className="bg-gray-900 border border-gray-700 w-full max-w-2xl max-h-screen overflow-y-auto">
+              <div className="p-4 border-b border-gray-700 flex justify-between items-center sticky top-0 bg-gray-900 z-10">
+                <h2 className="font-bold text-xl">Checkout</h2>
+                <button onClick={closeCheckout}>
+                <X size={18} />
+                </button>
+              </div>
+              
+              {renderCheckoutStep()}
+            </div>
           </div>
         )}
         

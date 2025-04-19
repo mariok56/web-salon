@@ -32,7 +32,7 @@ export const Services = () => {
         description: "Professional haircut with expert styling and beard trim.",
         price: "$35",
         duration: "30 min",
-        image: "/services/mens-cut.jpg"
+        image: "./Men's Classic Cut.png"
       },
       {
         id: 2,
@@ -40,7 +40,7 @@ export const Services = () => {
         description: "Professional cut and style tailored to your face shape and preferences.",
         price: "$55+",
         duration: "45 min",
-        image: "/services/womens-cut.jpg"
+        image: "womenHair.png"
       },
       {
         id: 3,
@@ -48,7 +48,7 @@ export const Services = () => {
         description: "Gentle haircut for kids in a friendly environment.",
         price: "$25",
         duration: "20 min",
-        image: "/services/kids-cut.jpg"
+        image: "childrencut.png"
       }
     ],
     coloring: [
@@ -58,7 +58,7 @@ export const Services = () => {
         description: "Complete hair color transformation with premium products.",
         price: "$85+",
         duration: "120 min",
-        image: "/services/full-color.jpg"
+        image: "./fullColor.png"
       },
       {
         id: 5,
@@ -66,7 +66,7 @@ export const Services = () => {
         description: "Partial or full highlights to enhance your natural look.",
         price: "$95+",
         duration: "90 min",
-        image: "/services/highlights.jpg"
+        image: "./highlights.png"
       }
     ],
     styling: [
@@ -76,7 +76,7 @@ export const Services = () => {
         description: "Professional wash and blow dry styling.",
         price: "$45",
         duration: "45 min",
-        image: "/services/blowout.jpg"
+        image: "./dry.png"
       },
       {
         id: 7,
@@ -84,7 +84,7 @@ export const Services = () => {
         description: "Formal updo or styling for weddings and special events.",
         price: "$75+",
         duration: "60 min",
-        image: "/services/special-occasion.jpg"
+        image: "./wedding.png"
       }
     ],
     treatments: [
@@ -94,7 +94,7 @@ export const Services = () => {
         description: "Intensive moisture treatment for damaged hair.",
         price: "$35",
         duration: "30 min",
-        image: "/services/conditioning.jpg"
+        image: "./conditionel.png"
       },
       {
         id: 9,
@@ -102,7 +102,7 @@ export const Services = () => {
         description: "Smoothing treatment to eliminate frizz and add shine.",
         price: "$150+",
         duration: "120 min",
-        image: "/services/keratin.jpg"
+        image: "./keratin.png"
       }
     ]
   };
@@ -157,7 +157,7 @@ export const Services = () => {
             >
               <div className="aspect-video bg-gray-700 mb-4 overflow-hidden">
                 <div className="w-full h-full bg-gray-800 flex items-center justify-center">
-                  <img src="/api/placeholder/400/300" alt={service.name} className="w-full h-full object-cover" />
+                  <img src={service.image} alt={service.name} className="w-full h-full object-cover" />
                 </div>
               </div>
               <h3 className="text-xl font-bold text-[#fbb034]">{service.name}</h3>

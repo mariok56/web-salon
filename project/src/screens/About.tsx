@@ -1,6 +1,9 @@
 import { Button } from "../components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 export const About = () => {
+  const navigate = useNavigate();
+  
   const teamMembers = [
     {
       name: "Michael Thompson",
@@ -27,6 +30,15 @@ export const About = () => {
       image: "./last.png"
     }
   ];
+
+  // Handle button clicks
+  const handleBookAppointmentClick = () => {
+    navigate("/booking");
+  };
+
+  const handleContactUsClick = () => {
+    navigate("/contact");
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -119,10 +131,16 @@ export const About = () => {
             Join our community of satisfied clients and discover why Choppers has become the preferred salon for those who value quality, expertise, and personalized service.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button className="bg-[#fbb034] hover:bg-[#fbb034]/90 text-black font-bold px-8 py-4 rounded-none">
+            <Button 
+              className="bg-[#fbb034] hover:bg-[#fbb034]/90 text-black font-bold px-8 py-4 rounded-none"
+              onClick={handleBookAppointmentClick}
+            >
               Book an Appointment
             </Button>
-            <Button className="bg-gray-700 hover:bg-gray-600 text-white font-bold px-8 py-4 rounded-none">
+            <Button 
+              className="bg-gray-700 hover:bg-gray-600 text-white font-bold px-8 py-4 rounded-none"
+              onClick={handleContactUsClick}
+            >
               Contact Us
             </Button>
           </div>
